@@ -1,12 +1,20 @@
 #include "Device.h"
-#include "Arduino.h"
 
 
 Device::Device()
 {}
 
-void Device::SetupDevice(int PinNumber, bool Digital, bool Input, int MinValue, int MaxValue, int InitialValue, int StepValue, bool StepDirectionUp, int DelayToChange)
+Device::~Device()
+{}
+
+Device::Device(bool Debug, int PinNumber, bool Digital, bool Input, int MinValue,  int MaxValue, int InitialValue, int StepValue, bool StepDirectionUp, int DelayToChange)
 {
+	SetupDevice(Debug, PinNumber, Digital, Input, MinValue, MaxValue, InitialValue, StepValue, StepDirectionUp, DelayToChange);
+}
+	
+void Device::SetupDevice(bool Debug, int PinNumber, bool Digital, bool Input, int MinValue, int MaxValue, int InitialValue, int StepValue, bool StepDirectionUp, int DelayToChange)
+{
+	//Serial.println("Device Setup");
 	pinNumber = PinNumber;
 	digital = Digital;
 	input = Input;
@@ -18,7 +26,9 @@ void Device::SetupDevice(int PinNumber, bool Digital, bool Input, int MinValue, 
 	stepDirectionUp = StepDirectionUp;
 	currentValue = InitialValue;
 
+	//Setup PIN Mode
 	pinMode(pinNumber,getPinMode());
+
 }
 
 int Device::getPinMode()
@@ -30,38 +40,60 @@ int Device::getPinMode()
 		return OUTPUT;
 }
 
-
 bool Device::TimeToUpdate()
 {
-	if (stepValue == 0)
-		if ((lastUpdated + delayToChangeValue) <= millis())
-		{
-			lastUpdated = millis();
-			return true;
-		} else
-		{
-			return false;
-		}
+	if (debug)
+	{
+		Serial.println(millis());
+		Serial.println(lastUpdated);
+		Serial.println(lastUpdated + delayToChangeValue);
+	}
+	if ((lastUpdated + delayToChangeValue) <= millis())
+	{
+		if (debug)
+			Serial.println("Time to update!");
+		 
+		 if (debug)
+			 Serial.println("Update");
+		return true;
+	} else
+	{
+		if (debug)
+			 Serial.println("NOT TIME TO UPDATE!");
+		return false;
+	}
+	if (debug)
+		Serial.println("-----------");
 }
 
 void Device::Update()
 {
+	if (debug)
+	{
+		 Serial.print("Current Value: ");
+		Serial.println(currentValue);
+		Serial.println("-----------");
+	}
 	if (TimeToUpdate())
 	{
+		//if (pinNumber = 8)
+			//Serial.println("Time To update");
+		lastUpdated = millis();
 		currentValue = GetNextValue();
 
 		WriteValue(currentValue);
+		
 	}
 
-	lastUpdated = millis();
 }
 
 void Device::Update(int newValue)
 {
 	if (TimeToUpdate())
+	{
 		WriteValue(newValue);
-
-	lastUpdated = millis();
+		//lastUpdated = millis();
+	}
 }
 
 void Device::WriteValue(int value)
@@ -70,10 +102,15 @@ void Device::WriteValue(int value)
 		digitalWrite(pinNumber,value);
 	else
 		analogWrite(pinNumber, value);
+	//if (pinNumber = 8)
+			//Serial.write("Written value %S\n", value);
 }
 
 int Device::GetNextValue()
 {
+	if (debug)
+		Serial.println(currentValue);
+	
 	if (stepDirectionUp) //Increasing values
 	{
 		currentValue = currentValue + stepValue;
@@ -91,16 +128,31 @@ int Device::GetNextValue()
 			currentValue = minValue;
 			stepDirectionUp = !stepDirectionUp; //Invers Direction
 		}
+		
 	}
 
+	if (debug)
+		Serial.println(currentValue);
+	if (debug)
+		Serial.println("-------------");
+	return currentValue;
 }
 
 int Device::GetValue()
 {
-	if (digital)
-		return digitalRead(pinNumber);
-	else
-		return analogRead(pinNumber);
-}
+	int value;
 
+	if (digital)
+		value = digitalRead(pinNumber);
+	else
+		value = analogRead(pinNumber);
+	
+	if (debug)
+	{
+		Serial.print("GetValue : " );
+		Serial.print(value);
+	}
+
+	return value;
+}
 
