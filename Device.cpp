@@ -150,7 +150,7 @@ int Device::GetValue()
 	if (debug)
 	{
 		Serial.print("GetValue : " );
-		Serial.print(value);
+		Serial.println(value);
 	}
 
 	return value;
